@@ -66,7 +66,7 @@ pipeline {
                     }
                     post {
                         always{
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, icon: '', keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'PlayWright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, icon: '', keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'PlayWright Local Report', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }  
                 }
@@ -87,6 +87,28 @@ pipeline {
                             node_modules/.bin/netlify deploy --dir=build --prod
                         '''
                     }
+                }
+                stage('Production E2E') {
+                    agent{
+                        docker{
+                        image 'mcr.microsoft.com/playwright:v1.53.0-noble'
+                        reuseNode true
+                        }
+                    }
+                    environment{
+                        CI_ENVIRONMENT_URL = 'https://aquamarine-trifle-cd5ca0.netlify.app'
+                    }
+                
+                    steps {
+                        sh '''
+                            npx playwright test --reporter=html
+                        '''
+                    }
+                    post {
+                        always{
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, icon: '', keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'PlayWright Production Report', reportTitles: '', useWrapperFileDirectly: true])
+                        }
+                    }  
                 }
                 
             }
