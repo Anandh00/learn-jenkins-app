@@ -72,28 +72,6 @@ pipeline {
                 }
             }
         }
-        stage('Deploy Staging') {
-            agent{
-                docker{
-                image 'node:18'
-                reuseNode true
-                }
-            }              
-            steps {
-                
-                sh '''
-                    npm install netlify-cli node-jq
-                    node_modules/.bin/netlify --version
-                    echo "Deployment is started in site with site id : $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --json > json_output.json
-                '''
-                script{
-                    env.MY_PAGE=sh(script:"node_modules/.bin/node-jq -r '.deploy_url' json_output.json",returnStdout:true)
-                }
-            }
-
-        }
         stage('Local E2E') {
             agent{
                 docker{
@@ -102,12 +80,19 @@ pipeline {
                 }
             }
             environment{
-                CI_ENVIRONMENT_URL = "${env.MY_PAGE}"
+                CI_ENVIRONMENT_URL = "STAGE_URL"
             }
         
             steps {
                 sh '''
                     npx playwright test --reporter=html
+                    npm install netlify-cli node-jq
+                    node_modules/.bin/netlify --version
+                    echo "Deployment is started in site with site id : $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build --json > json_output.json
+                    CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' json_output.json)
+
                 '''
             }
             post {
@@ -124,24 +109,6 @@ pipeline {
                     }
             }
         }
-        stage('Deploy Prod') {
-            agent{
-                docker{
-                image 'node:18'
-                reuseNode true
-                }
-            }              
-            steps {
-                
-                sh '''
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
-                    echo "Deployment is started in site with site id : $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod
-                '''
-            }
-        }
         stage('Production E2E') {
             agent{
                 docker{
@@ -150,11 +117,17 @@ pipeline {
                 }
             }
             environment{
-                CI_ENVIRONMENT_URL = 'https://aquamarine-trifle-cd5ca0.netlify.app'
+                CI_ENVIRONMENT_URL = 'STAGE_URL'
             }
         
             steps {
                 sh '''
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
+                    echo "Deployment is started in site with site id : $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build --prod --json > json_output.json
+                    CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' json_output.json)
                     npx playwright test --reporter=html
                 '''
             }
