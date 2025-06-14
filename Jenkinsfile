@@ -85,13 +85,14 @@ pipeline {
         
             steps {
                 sh '''
-                    npx playwright test --reporter=html
+                    
                     npm install netlify-cli node-jq
                     node_modules/.bin/netlify --version
                     echo "Deployment is started in site with site id : $NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
                     node_modules/.bin/netlify deploy --dir=build --json > json_output.json
                     CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' json_output.json)
+                    npx playwright test --reporter=html
 
                 '''
             }
