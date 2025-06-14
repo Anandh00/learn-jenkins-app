@@ -87,9 +87,34 @@ pipeline {
                     echo "Deployment is started in site with site id : $NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
                     node_modules/.bin/netlify deploy --dir=build --json > json_output.json
-                    node_modules/.bin/node-jq -r '.deploy_url' json_output.json
+                '''
+                script{
+                    env.MY_PAGE=sh(script:"node_modules/.bin/node-jq -r '.deploy_url' json_output.json",returnStdout:true)
+                }
+            }
+
+        }
+        stage('Local E2E') {
+            agent{
+                docker{
+                image 'mcr.microsoft.com/playwright:v1.53.0-noble'
+                reuseNode true
+                }
+            }
+            environment{
+                CI_ENVIRONMENT_URL = "{$env.MY_PAGE}"
+            }
+        
+            steps {
+                sh '''
+                    npx playwright test --reporter=html
                 '''
             }
+            post {
+                always{
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, icon: '', keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'PlayWright Local Report', reportTitles: '', useWrapperFileDirectly: true])
+                }
+            }  
         }
         stage('Authentication') {
             steps {
