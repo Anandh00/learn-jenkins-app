@@ -103,14 +103,6 @@ pipeline {
                 }
             }  
         }
-        stage('Authentication') {
-            steps {
-                    echo 'Waiting for the authentication from cheif'
-                    timeout(1) {
-                        input cancel: 'Developers need to recheck, Abort', message: 'Ready to deploy', ok: 'I\'m approving this deployment'
-                    }
-            }
-        }
         stage('Production E2E') {
             agent{
                 docker{
