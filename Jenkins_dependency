@@ -1,0 +1,10 @@
+pipeline {
+    agent any
+    stages {
+        stage('Docker Image'){
+            steps {
+                sh' docker build -t my-setup .'
+            }
+        }
+    }
+}
