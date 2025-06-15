@@ -6,23 +6,6 @@ pipeline {
         REACT_APP_VERSION ="1.0.$BUILD_ID"
     }
     stages {
-        stage("AWS") {
-            agent {
-                docker {
-                    image 'amazon/aws-cli:latest'
-                    args "--entrypoint=''"
-                }
-            }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-creds', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
-                sh '''
-                echo "Hey Japreee..!" > index.html
-                aws s3 cp index.html s3://myfirstbuckettodevlopmypreejuslifewithme/index.html
-                '''
-                }
-                
-            }
-        }
         stage('BUild') {
             agent{
                 docker{
@@ -41,6 +24,23 @@ pipeline {
                     ls -la
 
                 '''
+            }
+        }
+        stage("AWS") {
+            agent {
+                docker {
+                    image 'amazon/aws-cli:latest'
+                    args "--entrypoint=''"
+                    reuseNode true
+                }
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'aws-creds', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                sh '''
+                aws s3 sync build s3://myfirstbuckettodevlopmypreejuslifewithme
+                '''
+                }
+                
             }
         }
         stage('Run Parallel') {
