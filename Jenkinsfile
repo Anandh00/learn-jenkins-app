@@ -6,6 +6,11 @@ pipeline {
         REACT_APP_VERSION ="1.0.$BUILD_ID"
     }
     stages {
+        stage('Docker Image'){
+            steps {
+                sh' docker build -t my-setup .'
+            }
+        }
         stage('BUild') {
             agent{
                 docker{
@@ -76,7 +81,7 @@ pipeline {
         stage('Local E2E') {
             agent{
                 docker{
-                image 'mcr.microsoft.com/playwright:v1.53.0-noble'
+                image 'my-setup'
                 reuseNode true
                 }
             }
@@ -87,12 +92,12 @@ pipeline {
             steps {
                 sh '''
                     
-                    npm install netlify-cli node-jq
-                    node_modules/.bin/netlify --version
+
+                    netlify --version
                     echo "Deployment is started in site with site id : $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --json > json_output.json
-                    CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' json_output.json)
+                    netlify status
+                    netlify deploy --dir=build --json > json_output.json
+                    CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' json_output.json)
                     npx playwright test --reporter=html
 
                 '''
@@ -114,7 +119,7 @@ pipeline {
         stage('Production E2E') {
             agent{
                 docker{
-                image 'mcr.microsoft.com/playwright:v1.53.0-noble'
+                image 'my-setup'
                 reuseNode true
                 }
             }
@@ -124,12 +129,12 @@ pipeline {
         
             steps {
                 sh '''
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
+                    
+                    netlify --version
                     echo "Deployment is started in site with site id : $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod --json > json_output.json
-                    CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' json_output.json)
+                    netlify status
+                    netlify deploy --dir=build --prod --json > json_output.json
+                    CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' json_output.json)
                     npx playwright test --reporter=html
                 '''
             }
